@@ -80,6 +80,7 @@ Router.put("/users/:userId", async (req, res) => {
 });
 
 Router.get("/user/:userId", async (req, res) => {
+  console.log('test')
   try {
     const userId = req.params.userId;
     if (!userId) {
