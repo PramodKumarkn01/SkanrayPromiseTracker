@@ -120,6 +120,8 @@ app.put("/TGroup/:TGroupId", async (req, res) => {
       { groupName, members: updatedMembers, profilePic, projectLead: updateprojectLeads, deptHead: updatedeptHeads },
       { new: true }
     );
+    
+    
 
     res.json(updatedTGroup);
   } catch (error) {

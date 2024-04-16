@@ -42,6 +42,8 @@ app.get("/countCompletedTasks/:userId", async (req, res) => {
       return res.status(400).json({ message: "UserId is required" });
     }
 
+
+    
     const completedCountQuery = {
       people: { $elemMatch: { userId: userId } },
       status: "Completed",
