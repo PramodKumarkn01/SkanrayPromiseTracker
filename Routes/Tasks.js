@@ -42,7 +42,6 @@ app.get("/countCompletedTasks/:userId", async (req, res) => {
       return res.status(400).json({ message: "UserId is required" });
     }
 
-    // Adjusting the query to match the userId within the people array
     const completedCountQuery = {
       people: { $elemMatch: { userId: userId } },
       status: "Completed",
