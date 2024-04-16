@@ -57,6 +57,7 @@ const LevelsRoutes = async (req, res, next) => {
             "Access not allowed for other userRoles or unauthorized users",
         });
     }
+    
   } catch (error) {
     console.log("Catch error", error);
     return res.status(500).json({ error: "Internal Server Error" });
