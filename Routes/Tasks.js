@@ -1,6 +1,7 @@
 const express = require("express");
 const Task = require("../modules/TaskSchema");
 const app = express.Router();
+
 app.get("/tasks", async (req, res) => {
   try {
     const taskGroups = await Task.find().sort({ createdAt: -1 });
@@ -32,50 +33,39 @@ app.put("/tasks/:taskId", async (req, res) => {
   }
 });
 
-
 app.get("/countCompletedTasks/:userId", async (req, res) => {
   try {
-    // Extract userId from query parameters
-//  console.log(req.params,"hgh")
     const { userId } = req.params;
+    // console.log(userId, "userid");
 
-    // Validate userId is provided
     if (!userId) {
       return res.status(400).json({ message: "UserId is required" });
     }
 
-    // Count tasks where status is 'Completed' for the given userId
-    const completedCount = await Task.countDocuments({ userId, status: "Completed" });
+    // Adjusting the query to match the userId within the people array
+    const completedCountQuery = {
+      people: { $elemMatch: { userId: userId } },
+      status: "Completed",
+    };
 
-    // Count total tasks for the given userId
-    const totalCount = await Task.countDocuments({ userId });
+    const totalCountQuery = {
+      people: { $elemMatch: { userId: userId } },
+    };
+
+    // Count tasks where status is 'Completed' for the given userId within the people array
+    const completedCount = await Task.countDocuments(completedCountQuery);
+
+    // Count total tasks for the given userId within the people array
+    const totalCount = await Task.countDocuments(totalCountQuery);
 
     // Return both counts in the response
     res.json({ completedCount, totalCount });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching counts", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching counts", error: error.message });
   }
 });
-
-
-// app.get("/countCompletedTasks", async (req, res) => {
-//   try {
-//     // Count tasks where status is 'Completed'
-//     const completedCount = await Task.countDocuments({ status: "Completed" });
-
-//     // Count total tasks
-//     const totalCount = await Task.countDocuments();
-
-//     // Return both counts in the response
-//     res.json({ completedCount, totalCount });
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({ message: "Error fetching counts", error: error.message });
-//   }
-// });
-
-
 
 app.get("/countTasksByGroup/:taskGroupName", async (req, res) => {
   try {
@@ -105,11 +95,11 @@ app.get("/countTasksByGroup/:taskGroupName", async (req, res) => {
 app.put("/category/:taskId", async (req, res) => {
   try {
     const taskId = req.params.taskId;
-    const { category, status,remark } = req.body;
+    const { category, status, remark } = req.body;
 
     const updatedCategory = await Task.findByIdAndUpdate(
       taskId,
-      { $set: { category, status,remark } },
+      { $set: { category, status, remark } },
       { new: true }
     );
 

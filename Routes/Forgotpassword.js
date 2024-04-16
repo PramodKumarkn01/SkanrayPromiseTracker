@@ -32,7 +32,7 @@ const sendOTPEmail = async (email, otp) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Reset OTP sent successfully');
+    // console.log('Reset OTP sent successfully');
   } catch (error) {
     console.error('Error sending reset OTP:', error);
     throw error;

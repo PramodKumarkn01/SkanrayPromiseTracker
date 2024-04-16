@@ -7,6 +7,8 @@ const taskSchema = new mongoose.Schema({
   taskGroup: { type: String },
   taskName: { type: String },
   description: { type: String },
+  audioFile:{ type: String },
+  pdfFile:{type: String},
   people: [{ userId: String, name: String }],
   startDate: { type: String },
   endDate: { type: String },

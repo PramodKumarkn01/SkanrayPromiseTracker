@@ -133,9 +133,9 @@ app.get("/members/:TGroupId", async (req, res) => {
 
   try {
     // Use populate to get members based on TGroupId
-    const tgroup = await TGroupSchema.findOne({ _id: TGroupId }).populate(
-      "members"
-    );
+    const tgroup = await TGroupSchema.findOne({ _id: TGroupId }).populate({
+      path: "members deptHead projectLead"
+  });
 
     if (!tgroup) {
       return res
@@ -144,7 +144,10 @@ app.get("/members/:TGroupId", async (req, res) => {
     }
 
     const members = tgroup.members;
-    res.json(members);
+    const deptHead = tgroup.deptHead;
+    const projectLead = tgroup.projectLead;
+
+    res.json({members, deptHead, projectLead});
     // console.log(members,"members");
   } catch (error) {
     console.error("Error:", error);
@@ -153,7 +156,7 @@ app.get("/members/:TGroupId", async (req, res) => {
 });
 
 app.delete("/delete/:TGroupId", LevelsRoutes, async (req, res) => {
-  console.log("del");
+  // console.log("del");
   const TGroupId = req.params.TGroupId;
 
   try {

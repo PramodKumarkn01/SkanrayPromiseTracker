@@ -13,8 +13,8 @@ const storage = multer.memoryStorage(); // Store the file as a Buffer in memory
 const upload = multer({ storage: storage });
 
 Router.post("/registration", async (req, res) => {
-  const { name, mobilenumber, email, password,userRole} = req.body;
-// console.log(req.body,'sassasa')
+  const { name, mobilenumber, email, password, userRole } = req.body;
+  // console.log(req.body,'sassasa')
   try {
     const existinguser = await UserSchema.findOne({ email: email });
     if (existinguser) {
@@ -80,7 +80,7 @@ Router.put("/users/:userId", async (req, res) => {
 });
 
 Router.get("/user/:userId", async (req, res) => {
-  console.log('test')
+  // console.log('test')
   try {
     const userId = req.params.userId;
     if (!userId) {
@@ -106,8 +106,7 @@ Router.get("/userData", async (req, res) => {
       userId: item._id,
       name: item.name,
       email: item.email,
-      userRole:item.userRole,
-
+      userRole: item.userRole,
     }));
     res.json(allUserData);
   } catch (error) {
@@ -124,7 +123,6 @@ Router.get("/registeredNames", async (req, res) => {
       userId: item._id,
       name: item.name,
       email: item.email,
-
     }));
 
     res.json(userNamesEmail);
@@ -133,9 +131,6 @@ Router.get("/registeredNames", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-
-
 
 Router.put("/updateUserRole/:id", async (req, res) => {
   const { id } = req.params; // Get the user ID from the URL parameters
@@ -157,9 +152,21 @@ Router.put("/updateUserRole/:id", async (req, res) => {
     }
 
     res.send(updatedUser);
-    console.log(updatedUser,"role")
+    // console.log(updatedUser,"role")
   } catch (error) {
     res.status(500).send("Something went wrong");
+  }
+});
+
+Router.delete("/users/:id", async (req, res) => {
+  try {
+    const user = await UserSchema.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    res.send({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 });
 

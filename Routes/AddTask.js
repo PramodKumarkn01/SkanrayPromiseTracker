@@ -2,12 +2,35 @@ const express = require("express");
 const Task = require("../modules/TaskSchema");
 const Notification = require("../modules/Notification");
 const UserSchema = require("../modules/UserSchema");
+const multer = require('multer');
 const app = express.Router();
 const { Expo } = require("expo-server-sdk");
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
 const expo = new Expo();
+app.use(cors());
 
-app.post("/tasks", async (req, res) => {
+// Set up Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+      cb(null, 'uploads/'); // Directory for file uploads
+  },
+  filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({ storage });
+
+// Ensure 'uploads' directory exists
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+app.post("/tasks", upload.single('pdfFile'), async (req, res) => {
  
   try {
     const {
@@ -15,19 +38,24 @@ app.post("/tasks", async (req, res) => {
       taskGroup,
       taskName,
       description,
+      audioFile,
       people,
       startDate,
       endDate,
       reminder,
     } = req.body;
-    // console.log(req.body,"data")
+    // console.log(req.file,"data")
     const ownerId = owner.id; // Extracting owner id
     const ownerName = owner.name;
+    const pdfFilePath = req.file ? req.file.path : null;
+    // const audio = req.file ? req.file.path : null;
     const newTask = new Task({
       owner, // Assigning owner id as a string
       taskGroup,
       taskName,
       description,
+      audioFile,
+      pdfFile: pdfFilePath,
       people,
       startDate,
       endDate,
@@ -150,7 +178,7 @@ app.put('/tasks/update/:taskId', async (req, res) => {
     }
 
     res.status(200).send(task);
-   console.log(task,'updatetsak') 
+  //  console.log(task,'updatetsak') 
   } catch (error) {
     console.error('Error updating task:', error);
     res.status(500).json({ error: 'Internal Server Error' });
