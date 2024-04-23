@@ -121,8 +121,6 @@ app.put("/TGroup/:TGroupId", async (req, res) => {
       { new: true }
     );
     
-    
-
     res.json(updatedTGroup);
   } catch (error) {
     console.error("Error:", error);
