@@ -10,11 +10,13 @@ const ForgetPassword =require('./Routes/Forgotpassword')
 const ResetPassword = require('./Routes/Resetpassword')
 const app = express();
 const PORT=5000;
+const path = require('path'); // Import the path module
 mongoose.connect('mongodb+srv://Promise:Promise@cluster0.iufeasi.mongodb.net/?retryWrites=true&w=majority')
 .then(()=> console.log("connected successfuly"))
 .catch(err=> console.error("field connection",err));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true}))
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api',UserR);
 app.use('/api',Signinroutes);
 app.use('/api',AddTask);

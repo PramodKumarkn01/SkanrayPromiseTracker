@@ -12,26 +12,21 @@ const fs = require('fs');
 const expo = new Expo();
 app.use(cors());
 
-// Set up Multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-      cb(null, 'uploads/'); // Directory for file uploads
-  },
-  filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
+const upload = multer({
+  dest: 'uploads/audio',
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/audio');
+    },
+    filename: (req, file, cb) => {
+      // Append .pdf extension to the original filename
+      const extension = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + Date.now() + extension);
+    }
+  })
 });
 
-const upload = multer({ storage });
-
-// Ensure 'uploads' directory exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-
 app.post("/tasks", upload.single('pdfFile'), async (req, res) => {
-  console.log('reqst file', req.file)
   try {
     const {
       owner,
@@ -44,23 +39,27 @@ app.post("/tasks", upload.single('pdfFile'), async (req, res) => {
       endDate,
       reminder,
     } = req.body;
-    // console.log(req.file,"data")
+    // console.log("reqst body",req.body)
+    // console.log("reqst pdf body",req.file)
+
+    // console.log(req.body,"data")
     const ownerId = owner.id; // Extracting owner id
     const ownerName = owner.name;
-    const pdfFilePath = req.file ? req.file.path : null;
-    // const audio = req.file ? req.file.path : null;
+    const pdfFile = req.file ? req.file.path : null;
+ 
+    // console.log('pdf',req.file)
     const newTask = new Task({
-      owner, // Assigning owner id as a string
+      owner,
       taskGroup,
       taskName,
       description,
       audioFile,
-      pdfFile: pdfFilePath,
+      pdfFile,
       people,
       startDate,
       endDate,
       reminder,
-      createdAt: new Date(),
+      createdAt: new Date(),  
     });
 
     // Use the asynchronous function to add the taskz
