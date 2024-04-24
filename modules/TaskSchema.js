@@ -17,7 +17,6 @@ const taskSchema = new mongoose.Schema({
   category: {type: String},
   comment: { type: String },
   remark: { type: String },
-
   createdAt: { type: Date }
 });
 

@@ -1,5 +1,6 @@
 const express = require("express");
 const Task = require("../modules/TaskSchema");
+const Comments = require("../modules/Comments");
 const app = express.Router();
 
 app.get("/tasks", async (req, res) => {
@@ -113,6 +114,30 @@ app.put("/category/:taskId", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.post('/Comments', async (req, res) => {
+  try {
+    const { text, sender, taskId } = req.body;
+    const newMessage = new Comments({ text, sender, taskId });
+    await newMessage.save();
+    res.status(201).json({ message: 'Message posted successfully' });
+  } catch (error) {
+    console.error('Error posting message:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get("/comments/:taskId", async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+    // Fetch comments for the specified task ID
+    const comments = await Comments.find({ taskId });
+    res.json(comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
