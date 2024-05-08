@@ -12,7 +12,7 @@ const ResetPassword = require('./Routes/Resetpassword')
 const app = express();
 const PORT=5000;
 app.use(cors());
-const path = require('path'); // Import the path module
+const path = require('path'); 
 mongoose.connect('mongodb+srv://Promise:Promise@cluster0.iufeasi.mongodb.net/?retryWrites=true&w=majority')
 .then(()=> console.log("connected successfuly"))
 .catch(err=> console.error("field connection",err));
