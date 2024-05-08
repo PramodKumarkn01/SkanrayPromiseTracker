@@ -34,7 +34,7 @@ Router.post('/Signin', async (req, res) => {
       secretKey    );
       // console.log(token);
 
-      res.status(200).json({ userId: user._id, token });
+      res.status(200).json({ userId: user._id, token, active: user.active});
       } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

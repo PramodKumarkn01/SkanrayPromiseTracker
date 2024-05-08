@@ -11,6 +11,10 @@ const registerSchema = new mongoose.Schema({
   designation: { type: String },
   userRole: { type: Number, },
   resetOTP:{type:Number},
+  active: {
+    type: Boolean,
+    default: true // Assuming users are active by default
+  },
 });
 const User = mongoose.model("User", registerSchema);
 module.exports = User;

@@ -13,8 +13,8 @@ const storage = multer.memoryStorage(); // Store the file as a Buffer in memory
 const upload = multer({ storage: storage });
 
 Router.post("/registration", async (req, res) => {
-  const { name, mobilenumber, email, password, userRole } = req.body;
-  // console.log(req.body,'sassasa')
+  const { name, mobilenumber, email, password, userRole,active } = req.body;
+  console.log(req.body,'sassasa')
   try {
     const existinguser = await UserSchema.findOne({ email: email });
     if (existinguser) {
@@ -29,6 +29,7 @@ Router.post("/registration", async (req, res) => {
       email,
       password: hashedPassword,
       userRole,
+      active,
     });
     await newRegister.save();
     res.status(201).json({ message: "registration successfuly" });
@@ -123,6 +124,7 @@ Router.get("/registeredNames", async (req, res) => {
       userId: item._id,
       name: item.name,
       email: item.email,
+      active: item.active,
     }));
 
     res.json(userNamesEmail);
@@ -167,6 +169,35 @@ Router.delete("/users/:id", async (req, res) => {
     res.send({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).send({ message: "Server error", error: error.message });
+  }
+});
+
+Router.patch('/:userId/deactivate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('id',userId)
+    const user = await UserSchema.findByIdAndUpdate(userId, { active: false }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User deactivated successfully', user });
+  } catch (error) {
+    console.error('Error deactivating user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+Router.patch('/:userId/activate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await UserSchema.findByIdAndUpdate(userId, { active: true }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User activated successfully', user });
+  } catch (error) {
+    console.error('Error activating user:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
