@@ -45,6 +45,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
     // console.log(req.body,"data")
     const ownerId = owner.id; // Extracting owner id
     const ownerName = owner.name;
+    const ownerprofilePic = owner.profilePic;
     const pdfFile = req.file ? req.file.path : null;
 
     // console.log('pdf',req.file)
@@ -71,13 +72,15 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       const { userId, name } = assignedUser;
 
       const newNotification = new Notification({
+        // profilePic : ownerprofilePic,
         title: `${ownerName} assigning task to you`,
         description: `New task: ${taskName}`,
         status: "pending",
         userid: userId, 
         owner: {
           id: ownerId, 
-          name: ownerName, 
+          name: ownerName,
+          profilePic: ownerprofilePic,
         },
         taskId: taskId,
         created: new Date(),
@@ -134,7 +137,6 @@ app.post("/notifications/reply", async (req, res) => {
     });
 
     await newNotification.save();
-
     res
       .status(201)
       .json({ message: "Reply sent successfully", comment: comment });
@@ -177,7 +179,6 @@ app.put("/tasks/update/:taskId", async (req, res) => {
 app.put("/notifications/:taskid", async (req, res) => {
   const { id } = req.params; 
   const { title, description, status, owner, taskId } = req.body; 
-
   try {
     const notification = await Notification.findByIdAndUpdate(
       id,
@@ -190,7 +191,7 @@ app.put("/notifications/:taskid", async (req, res) => {
           taskId,
         },
       },
-      { new: true }
+      { new: true } 
     );
 
     if (!notification) {
