@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 const taskSchema = new mongoose.Schema({
-  owner: { id: String, name: String },
+  owner: { id: String, name: String, profilePic: String },
   // taskGroup:{ id: String, name: String },
   taskGroup: { type: String },
   taskName: { type: String },
