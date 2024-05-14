@@ -11,7 +11,6 @@ const fs = require("fs");
 
 const expo = new Expo();
 app.use(cors());
-
 const upload = multer({
   dest: "uploads/audio",
   storage: multer.diskStorage({
@@ -19,7 +18,6 @@ const upload = multer({
       cb(null, "uploads/audio");
     },
     filename: (req, file, cb) => {
-      // Append .pdf extension to the original filename
       const extension = path.extname(file.originalname);
       cb(null, file.fieldname + "-" + Date.now() + extension);
     },
@@ -43,7 +41,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
     // console.log("reqst pdf body",req.file)
 
     // console.log(req.body,"data")
-    const ownerId = owner.id; // Extracting owner id
+    const ownerId = owner.id;
     const ownerName = owner.name;
     const ownerprofilePic = owner.profilePic;
     const pdfFile = req.file ? req.file.path : null;
@@ -63,7 +61,6 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       createdAt: new Date(),
     });
 
-  
     let taskNew = await newTask.save();
    
     const taskId = taskNew._id;
@@ -84,6 +81,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
         },
         taskId: taskId,
         created: new Date(),
+        action: true,
       });
       await newNotification.save();
     }
@@ -198,10 +196,30 @@ app.put("/notifications/:taskid", async (req, res) => {
       return res.status(404).json({ message: "Notification not found" });
     }
 
-    res.json(notification); // Return the updated notification
+    res.json(notification);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+app.put("/action/update", async (req, res) => {
+  try {
+    const { userid } = req.body; 
+    console.log('id',req.body)
+
+    const updatedNotifications = await Notification.updateMany(
+      { userid: userid },
+      { $set: { action: "false" } }
+    );
+     
+    if (updatedNotifications.nModified === 0) {
+      return res.status(404).json({ error: 'No notifications found for this user' });
+    }
+    res.json({ message: 'Notifications updated successfully' });
+  } catch (error) {
+    console.error("Error updating notifications:", error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
