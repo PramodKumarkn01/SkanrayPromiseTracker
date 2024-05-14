@@ -203,21 +203,20 @@ app.put("/notifications/:taskid", async (req, res) => {
   }
 });
 
-app.put("/action/update", async (req, res) => {
+app.put("/action/update/:userid", async (req, res) => {
   try {
-    const { userid } = req.body; 
-    console.log('id',req.body)
-
+    const { userid } = req.params; 
+    console.log('id', userid);
     const updatedNotifications = await Notification.updateMany(
       { userid: userid },
-      { $set: { action: "false" } }
+      { $set: { action: false } }
     );
-     
     if (updatedNotifications.nModified === 0) {
       return res.status(404).json({ error: 'No notifications found for this user' });
     }
     res.json({ message: 'Notifications updated successfully' });
   } catch (error) {
+ 
     console.error("Error updating notifications:", error);
     res.status(500).json({ error: 'Internal server error' });
   }
