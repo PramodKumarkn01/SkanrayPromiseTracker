@@ -9,7 +9,7 @@ const bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
 
-const storage = multer.memoryStorage(); // Store the file as a Buffer in memory
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 Router.post("/registration", async (req, res) => {

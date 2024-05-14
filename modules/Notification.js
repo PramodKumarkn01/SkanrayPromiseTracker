@@ -12,6 +12,7 @@ const notificationSchema = new mongoose.Schema({
   },// Assuming 'owner' is a property in the notification
   taskId:{ type: String },
   created: { type: Date, default: Date.now },
+  action:{ type: String },
 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
