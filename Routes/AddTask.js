@@ -208,7 +208,7 @@ app.put("/action/update/:userid", async (req, res) => {
     const { userid } = req.params; 
     console.log('id', userid);
     const updatedNotifications = await Notification.updateMany(
-      { userid: userid },
+      { userid: userid, action: true },
       { $set: { action: false } }
     );
     if (updatedNotifications.nModified === 0) {
