@@ -39,7 +39,6 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
     } = req.body;
     // console.log("reqst body",req.body)
     // console.log("reqst pdf body",req.file)
-
     // console.log(req.body,"data")
     const ownerId = owner.id;
     const ownerName = owner.name;
@@ -71,7 +70,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       const newNotification = new Notification({
         // profilePic : ownerprofilePic,
         title: `${ownerName} assigning task to you`,
-        description: `New task: ${taskName}`,
+        description: `Task Name: ${taskName}`,
         status: "pending",
         userid: userId, 
         owner: {
@@ -96,19 +95,15 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
 
 app.post("/notifications/reply", async (req, res) => {
   try {
-    const { userId, taskId, status, comment } = req.body;
-
+    const { userId, taskId, status, comment,  startDate, endDate, action } = req.body;
     const user = await UserSchema.findById(userId);
-
     const task = await Task.findById(taskId);
     const taskName = task.taskName;
     const ownerId = task.owner.id;
-
     let description = `Task: ${taskName}`;
     if (comment) {
       description += `\nComment: ${comment}`;
     }
-
     let title;
     switch (status) {
       case "Accepted":
@@ -116,6 +111,7 @@ app.post("/notifications/reply", async (req, res) => {
         break;
       case "Rejected":
         title = `${user.name} rejected the task`;
+
         break;
       case "Accepted & Modified":
         title = `${user.name} accepted and  modified the task`;
@@ -129,9 +125,16 @@ app.post("/notifications/reply", async (req, res) => {
       description: description,
       status: status,
       userid: ownerId,
-      owner: user.name,
+      owner: {
+        id: userId,
+        name: user.name,
+        profilePic: user.profilePic,
+      },
       taskId: taskId,
       created: new Date(),
+      startDate: startDate,
+      endDate: endDate,
+      action: true,
     });
 
     await newNotification.save();
@@ -149,7 +152,6 @@ app.get("/notifications/:userId", async (req, res) => {
     const userId = req.params.userId;
 
     const userNotifications = await Notification.find({ userid: userId });
-
     res.json(userNotifications);
   } catch (error) {
     console.error("Error retrieving user notifications:", error);
@@ -222,28 +224,42 @@ app.put("/action/update/:userid", async (req, res) => {
   }
 });
 
-// app.put('/updatetasks/:id', async (req, res) => {
-//   const { id } = req.params;
-//   const { startDate, endDate, reminder, comment } = req.body;
-
+// app.patch('/statuscancel/:taskId', async (req, res) => {
 //   try {
-//     const updatedTask = await Task.findByIdAndUpdate(id, {
-//       $set: {
-//         startDate,
-//         endDate,
-//         reminder,
-//         comment
-//       }
-//     }, { new: true }); // { new: true } option returns the document after update
-
-//     if (!updatedTask) {
-//       return res.status(404).send('Task not found');
-//     }
-
-//     res.send(updatedTask);
-//   } catch (error) {
-//     res.status(400).send('Error updating task: ' + error.message);
+//     const updatedTask = await Task.findByIdAndUpdate(
+//       req.params.taskId,
+//       { status: 'Cancelled' },
+//       { new: true }
+//     );
+//     res.json(updatedTask);
+//   } catch (err) {
+//     res.status(400).json({ message: err.message });
 //   }
 // });
+
+app.put('/updatetasks/:id', async (req, res) => {
+  const { id } = req.params;
+  const { comment, status, } = req.body;
+
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(id, {
+      $set: {
+        // startDate,
+        // endDate,
+        // reminder,
+        comment,
+        status,
+      }
+    }, { new: true });
+
+    if (!updatedTask) {
+      return res.status(404).send('Task not found');
+    }
+
+    res.send(updatedTask);
+  } catch (error) {
+    res.status(400).send('Error updating task: ' + error.message);
+  }
+});
 
 module.exports = app;
