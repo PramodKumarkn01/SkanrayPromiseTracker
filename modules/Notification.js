@@ -13,6 +13,8 @@ const notificationSchema = new mongoose.Schema({
   taskId:{ type: String },
   created: { type: Date, default: Date.now },
   action:{ type: String },
+  startDate: { type: String},
+  endDate: { type: String},
 });
 
 const Notification = mongoose.model('Notification', notificationSchema);

@@ -11,7 +11,6 @@ app.post('/TGroups', customBodyParserMiddleware, async (req, res) => {
   try {
     let { groupName, deptHead, projectLead, members, profilePic } = req.body;
 
-    // Example transformation: take the first element if array, else use as is
     deptHead = Array.isArray(deptHead) && deptHead.length > 0 ? deptHead[0] : deptHead;
     projectLead = Array.isArray(projectLead) && projectLead.length > 0 ? projectLead[0] : projectLead;
 
@@ -45,6 +44,7 @@ app.post('/TGroups', customBodyParserMiddleware, async (req, res) => {
 //     res.status(500).json({ error: "Internal Server Error" });
 //   }
 // });
+
 app.get("/TGroups", LevelsRoutes, async (req, res) => {
   // console.log("mem");
   try {
@@ -136,7 +136,6 @@ app.get("/members/:TGroupId", async (req, res) => {
     const tgroup = await TGroupSchema.findOne({ _id: TGroupId }).populate({
       path: "members deptHead projectLead"
   });
-
     if (!tgroup) {
       return res
         .status(404)
