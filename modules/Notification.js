@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const notificationSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  status: { type: String, required: true },
-  userid: { type: String},
+  status: { type: String, enum: ['unread', 'read'], default: 'unread' },
+  userId: { type: String},
   owner: {
     id: String, // Assuming you have an ownerId variable
     name: String,

@@ -7,16 +7,19 @@ const taskSchema = new mongoose.Schema({
   taskGroup: { type: String },
   taskName: { type: String },
   description: { type: String },
-  audioFile:{ type: String },
-  pdfFile:{type: String},
+  audioFile: { type: String },
+  pdfFile: { type: String },
   people: [{ userId: String, name: String }],
   startDate: { type: String },
   endDate: { type: String },
   reminder: { type: String },
   status: { type: String },
-  category: {type: String},
+  category: { type: String },
   comment: { type: String },
-  remark: { type: String },
+  remark: {
+    text: { type: String, },
+    date: { type: String, }
+  },
   createdAt: { type: Date }
 });
 

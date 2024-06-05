@@ -3,7 +3,7 @@ const TGroupSchema = require("../modules/TGroupSchema");
 const Task = require("../modules/TaskSchema");
 const LevelsRoutes = require("./RoleLevels");
 const bodyParser = require('body-parser');
-
+const User = require("../modules/UserSchema");
 const app = express.Router();
 const customBodyParserMiddleware = bodyParser.json({ limit: '100mb' });
 
@@ -22,12 +22,58 @@ app.post('/TGroups', customBodyParserMiddleware, async (req, res) => {
       profilePic,
       createdAt: new Date(),
     });
-
+  
     const savedTaskGroup = await newTaskGroup.save();
     const allTaskGroups = await TGroupSchema.find();
     res.status(201).json({ savedTaskGroup, allTaskGroups });
   } catch (error) {
     console.error("Error adding newGroup:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+app.get("/allgroups/:userId", async (req, res) => {
+  try {
+    console.log('Received request for user ID:', req.params.userId);
+
+    const userId = req.params.userId; // Get userId from route parameters
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    // Fetch the user role based on the userId
+    const user = await User.findById(userId); // Assuming you have a UserSchema
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log('User found:', user);
+
+    const userRole = user.userRole;
+
+    let taskGroups;
+
+    if (userRole === 0 || userRole === 1 || userRole === 2) {
+      // Fetch all groups for admin, head, and lead roles
+      taskGroups = await TGroupSchema.find().sort({ createdAt: -1 });
+    } else if (userRole === 3) {
+      // Fetch only the groups assigned to this member
+      taskGroups = await TGroupSchema.find({ "members.userId": userId }).sort({ createdAt: -1 });
+      
+      // If no groups are found, return an empty array
+      if (taskGroups.length === 0) {
+        return res.json([]);
+      }
+    } else {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+    
+
+    console.log('Task groups:', taskGroups);
+
+    res.json(taskGroups);
+  } catch (error) {
+    console.error("Error fetching task groups:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -44,6 +90,15 @@ app.post('/TGroups', customBodyParserMiddleware, async (req, res) => {
 //     res.status(500).json({ error: "Internal Server Error" });
 //   }
 // });
+app.get("/groups", async (req, res) => {
+  try {
+    const taskGroups = await TGroupSchema.find().sort({ createdAt: -1 });
+    res.json(taskGroups);
+  } catch (error) {
+    console.error("Error fetching task groups:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 app.get("/TGroups", LevelsRoutes, async (req, res) => {
   // console.log("mem");
@@ -93,6 +148,88 @@ app.get("/tasks/:taskGroupId", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+app.get('/groups/:id', async (req, res) => {
+  const groupId = req.params.id; // Extract group ID from request parameters
+
+  try {
+    const taskGroup = await TGroupSchema.findById(groupId);
+
+    if (!taskGroup) {
+      // If task group with the provided ID is not found, return 404 status
+      return res.status(404).json({ message: "Task group not found" });
+    }
+
+    // If task group is found, return it in the response
+    res.json(taskGroup);
+  } catch (error) {
+    // If an error occurs during database operation, return 500 status with error message
+    console.error("Error fetching task group:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.put("/group/:TGroupId", async (req, res) => {
+  const TGroupId = req.params.TGroupId;
+  const { groupName, members = [], profilePic, deptHead = [], projectLead = [] } = req.body;
+
+  try {
+    // Find the existing Task Group by its ID
+    const existingTGroup = await TGroupSchema.findById(TGroupId);
+
+    if (!existingTGroup) {
+      return res.status(404).json({ message: "Task Group not found" });
+    }
+
+    // Ensure that existing group lists are arrays and remove null/undefined values
+    existingTGroup.deptHead = existingTGroup.deptHead || [];
+    existingTGroup.projectLead = existingTGroup.projectLead || [];
+    existingTGroup.members = existingTGroup.members || [];
+
+    console.log("deptHead:", deptHead); // Log the deptHead array
+    console.log("projectLead:", projectLead); // Log the projectLead array
+
+    // Function to remove duplicates by _id and add new items
+    const updateList = (existingList, newList) => {
+      // Validate newList items and filter out null or undefined values
+      const validNewList = newList.filter(item => item && item._id);
+      // Create a Set of _id values from valid new items
+      const newIds = new Set(validNewList.map(item => item._id));
+      // Filter out existing items whose _id is not in the new set
+      const filteredList = existingList.filter(item => item && !newIds.has(item._id));
+      // Concatenate the filtered existing list with the valid new list
+      return filteredList.concat(validNewList);
+    };
+
+
+    // Deduplicate and update lists for department heads, project leads, and members
+    const updatedDeptHeads = updateList(existingTGroup.deptHead, deptHead);
+    const updatedProjectLeads = updateList(existingTGroup.projectLead, projectLead);
+    const updatedMembers = updateList(existingTGroup.members, members);
+
+    // Combine all updated lists and ensure uniqueness based on _id
+    const allUnique = Array.from(new Map(
+      [...updatedDeptHeads, ...updatedProjectLeads, ...updatedMembers].map(item => [item._id, item])
+    ).values());
+
+    // Update the Task Group with the new data
+    const updatedTGroup = await TGroupSchema.findByIdAndUpdate(
+      TGroupId,
+      {
+        groupName,
+        members: allUnique.filter(member => members.some(mem => mem._id === member._id)),
+        profilePic,
+        projectLead: allUnique.filter(member => projectLead.some(lead => lead._id === member._id)),
+        deptHead: allUnique.filter(member => deptHead.some(head => head._id === member._id))
+      },
+      { new: true }
+    );
+
+    res.json(updatedTGroup);
+  } catch (error) {
+    console.error("Error updating Task Group:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -153,6 +290,211 @@ app.get("/members/:TGroupId", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+app.delete("/deletegroup/:TGroupId", async (req, res) => {
+  const TGroupId = req.params.TGroupId;
+
+  // Check if TGroupId is a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(TGroupId)) {
+    return res.status(400).json({ message: "Invalid Group ID" });
+  }
+
+  try {
+    const deletedTask = await TGroupSchema.findOneAndDelete({ _id: TGroupId });
+
+    if (deletedTask) {
+      res.status(200).json({ message: "Task Group deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Task Group not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting Task Group:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+app.get("/tasksByGroup", async (req, res) => {
+  try {
+    // Aggregate tasks by group name
+    const tasksByGroup = await Task.aggregate([
+      {
+        $group: {
+          _id: "$taskGroup", // Group by taskGroup field
+          totalTasks: { $sum: 1 },
+          inProgressTasks: { $sum: { $cond: [{ $eq: ["$status", "In Progress"] }, 1, 0] } },
+          completedTasks: { $sum: { $cond: [{ $eq: ["$status", "Completed"] }, 1, 0] } },
+          cancelledTasks: { $sum: { $cond: [{ $eq: ["$status", "Cancelled"] }, 1, 0] } }
+        }
+      }
+    ]);
+
+
+    res.json(tasksByGroup);
+  } catch (error) {
+    console.error("Error fetching tasks by group:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.get("/allassignuser", async (req, res) => {
+  try {
+    // Find users with userRole equal to 3
+    const specifiedUsers = await User.find({ userRole: 3 });
+
+    // Array to store user data along with assigned task and group names
+    let userData = [];
+
+    // Iterate through specified users
+    for (const user of specifiedUsers) {
+      const userId = user._id;
+
+      // Find all tasks where the specified user is assigned as a person
+      const tasksForUser = await Task.find({ "people._id": userId }).populate('taskGroup', 'taskGroup');
+
+      // Initialize arrays to store assigned task names and group data for the user
+      let taskNames = [];
+
+      // Object to store group data
+      let groupData = [];
+
+      // Iterate through tasks assigned to the user
+      for (const task of tasksForUser) {
+        // Collect task names
+        taskNames.push(task.taskName);
+
+        // Get the group name
+        const groupName = task.taskGroup;
+
+        // Check if the group name already exists in groupData array
+        const groupIndex = groupData.findIndex(group => group.name === groupName);
+
+        // If the group name doesn't exist, add it to groupData array
+        if (groupIndex === -1) {
+          groupData.push({
+            name: groupName,
+            totalTasks: 1,
+            inProgressTasks: task.status === "In Progress" ? 1 : 0,
+            completedTasks: task.status === "Completed" ? 1 : 0,
+            cancelledTasks: task.status === "Cancelled" ? 1 : 0
+          });
+        } else {
+          // If the group name already exists, update the task counts
+          groupData[groupIndex].totalTasks++;
+          if (task.status === "In Progress") groupData[groupIndex].inProgressTasks++;
+          else if (task.status === "Completed") groupData[groupIndex].completedTasks++;
+          else if (task.status === "Cancelled") groupData[groupIndex].cancelledTasks++;
+        }
+      }
+
+      // Calculate task counts for the user
+      let totalTasks = 0;
+      let inProgressTasks = 0;
+      let completedTasks = 0;
+      let cancelledTasks = 0;
+
+      for (const task of tasksForUser) {
+        switch (task.status) {
+          case "In Progress":
+            inProgressTasks++;
+            break;
+          case "Completed":
+            completedTasks++;
+            break;
+          case "Cancelled":
+            cancelledTasks++;
+            break;
+        }
+        totalTasks++;
+      }
+
+      // Push user data along with assigned task names, group data, and task counts to userData array
+      userData.push({
+        user,
+        taskNames,
+        groupData,
+        taskCounts: {
+          total: totalTasks,
+          inProgress: inProgressTasks,
+          completed: completedTasks,
+          cancelled: cancelledTasks
+        }
+      });
+    }
+
+    res.json(userData);
+  } catch (error) {
+    console.error("Error fetching tasks assigned to the users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+app.get("/allusertask", async (req, res) => {
+  try {
+    // Find all users
+    const allUsers = await User.find();
+
+    // Array to store user data with task counts and group data
+    let userData = [];
+
+    // Iterate through each user
+    for (const user of allUsers) {
+      const userId = user._id;
+
+      // Find all tasks where the user is included in the people array
+      const tasksForUser = await Task.find({ "owner.id": userId });
+
+
+      // Initialize variables to store task counts
+      let totalTasks = tasksForUser.length;
+      let inProgressTasks = 0;
+      let completedTasks = 0;
+      let cancelledTasks = 0;
+
+      // Object to store group data
+      let groupData = {};
+
+      // Count tasks by status and group
+      for (const task of tasksForUser) {
+        // Count tasks by status
+        switch (task.status) {
+          case "In Progress":
+            inProgressTasks++;
+            break;
+          case "Completed":
+            completedTasks++;
+            break;
+          case "Cancelled":
+            cancelledTasks++;
+            break;
+        }
+
+        // Count tasks by group
+        const groupName = task.taskGroup;
+        groupData[groupName] = groupData[groupName] || { totalTasks: 0, inProgressTasks: 0, completedTasks: 0, cancelledTasks: 0 };
+        groupData[groupName].totalTasks++;
+        if (task.status === "In Progress") groupData[groupName].inProgressTasks++;
+        else if (task.status === "Completed") groupData[groupName].completedTasks++;
+        else if (task.status === "Cancelled") groupData[groupName].cancelledTasks++;
+      }
+
+      // Push user data with task counts and group data to userData array
+      userData.push({
+        user,
+        groupData,
+        taskCounts: {
+          total: totalTasks,
+          inProgress: inProgressTasks,
+          completed: completedTasks,
+          cancelled: cancelledTasks
+        }
+      });
+    }
+
+    res.json(userData);
+  } catch (error) {
+    console.error("Error fetching tasks assigned to the users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
 
 app.delete("/delete/:TGroupId", LevelsRoutes, async (req, res) => {
   // console.log("del");

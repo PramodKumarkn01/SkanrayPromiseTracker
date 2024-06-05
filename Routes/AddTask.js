@@ -93,6 +93,70 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
   }
 });
 
+app.post("/tasksadd", async (req, res) => {
+  try {
+    const { owner, taskGroup, taskName, description, audioFile, pdfFile, people, startDate, endDate, reminder, status, category, comment, remark } = req.body;
+
+    // Extracting owner's ID
+    const ownerId = owner.id;
+
+    // Querying the database to get the owner's name by ID
+    const ownerData = await UserSchema.findById(ownerId);
+    const ownerName = ownerData.name;
+
+    // Extracting owner's ID and name from people array
+    const assignedUsers = people.map(user => ({ id: user.userId, name: user.name }));
+
+    // Creating a new task object
+    const newTask = new Task({
+      owner: { id: ownerId, name: ownerName },
+      taskGroup,
+      taskName,
+      description,
+      audioFile,
+      pdfFile,
+      people,
+      startDate,
+      endDate,
+      reminder,
+      status,
+      category,
+      comment,
+      remark,
+      createdAt: new Date(),
+    });
+
+    // Saving the new task
+    const savedTask = await newTask.save();
+
+    // Saving notifications for assigned users
+    const taskId = savedTask._id;
+    for (const assignedUser of assignedUsers) {
+      const userId = assignedUser.id; // Extract userId from assignedUser object
+
+      const newNotification = new Notification({
+        title: `${ownerName} assigning task to you`,
+        description: `New task: ${taskName}`,
+        userId: userId, // Use extracted userId
+        owner: {
+          id: ownerId,
+          name: ownerName,
+        },
+        taskId,
+        created: new Date(),
+        action: true,
+      });
+
+      await newNotification.save();
+    }
+
+    // Responding with the newly created task
+    res.status(201).json({ newTask: savedTask });
+  } catch (error) {
+    console.error("Error creating task:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 app.post("/notifications/reply", async (req, res) => {
   try {
     const { userId, taskId, status, comment,  startDate, endDate, action } = req.body;
@@ -156,6 +220,40 @@ app.get("/notifications/:userId", async (req, res) => {
   } catch (error) {
     console.error("Error retrieving user notifications:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/notifications", async (req, res, next) => {
+  try {
+    const allNotifications = await Notification.find();
+    res.json(allNotifications);
+  } catch (error) {
+    console.error("Error retrieving notifications:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+    next(error);
+  }
+});
+
+app.put("/notifications/mark-read", async (req, res, next) => {
+  try {
+    const notificationIds = req.body.notificationIds;
+
+    // Find the notifications by IDs
+    const notifications = await Notification.find({ _id: { $in: notificationIds } });
+
+    // Update the status of found notifications to 'read'
+    await Promise.all(notifications.map(async (notification) => {
+      if (notification.status === 'unread') {
+        notification.status = 'read';
+        await notification.save();
+      }
+    }));
+
+    res.json({ message: "Notifications marked as read successfully" });
+  } catch (error) {
+    console.error("Error updating notification status:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+    next(error);
   }
 });
 
@@ -261,5 +359,6 @@ app.put('/updatetasks/:id', async (req, res) => {
     res.status(400).send('Error updating task: ' + error.message);
   }
 });
+
 
 module.exports = app;
