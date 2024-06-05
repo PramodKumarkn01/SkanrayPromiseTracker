@@ -79,6 +79,31 @@ Router.put("/users/:userId", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+Router.put("/usersedit/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    // Find the user by ID
+    const user = await UserSchema.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update user properties
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.mobilenumber) user.mobilenumber = req.body.mobilenumber;
+    if (req.body.profilePic) user.profilePic = req.body.profilePic;
+    if (req.body.department) user.department = req.body.department;
+    if (req.body.designation) user.designation = req.body.designation;
+
+    await user.save();
+
+    res.json(user);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 Router.get("/user/:userId", async (req, res) => {
   // console.log('test')
