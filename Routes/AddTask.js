@@ -72,7 +72,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
         title: `${ownerName} assigning task to you`,
         description: `Task Name: ${taskName}`,
         status: "pending",
-        userid: userId, 
+        userId: userId,
         owner: {
           id: ownerId, 
           name: ownerName,
@@ -188,7 +188,7 @@ app.post("/notifications/reply", async (req, res) => {
       title: title,
       description: description,
       status: status,
-      userid: ownerId,
+      userId: ownerId,
       owner: {
         id: userId,
         name: user.name,
@@ -215,7 +215,7 @@ app.get("/notifications/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
 
-    const userNotifications = await Notification.find({ userid: userId });
+    const userNotifications = await Notification.find({ userId: userId }).sort({created: -1});
     res.json(userNotifications);
   } catch (error) {
     console.error("Error retrieving user notifications:", error);
@@ -225,7 +225,7 @@ app.get("/notifications/:userId", async (req, res) => {
 
 app.get("/notifications", async (req, res, next) => {
   try {
-    const allNotifications = await Notification.find();
+    const allNotifications = await Notification.find().sort({created: -1});
     res.json(allNotifications);
   } catch (error) {
     console.error("Error retrieving notifications:", error);
@@ -303,12 +303,12 @@ app.put("/notifications/:taskid", async (req, res) => {
   }
 });
 
-app.put("/action/update/:userid", async (req, res) => {
+app.put("/action/update/:userId", async (req, res) => {
   try {
-    const { userid } = req.params; 
-    console.log('id', userid);
+    const { userId } = req.params; 
+    console.log('id', userId);
     const updatedNotifications = await Notification.updateMany(
-      { userid: userid, action: true },
+      { userid: userId, action: true },
       { $set: { action: false } }
     );
     if (updatedNotifications.nModified === 0) {
