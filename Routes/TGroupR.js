@@ -172,65 +172,49 @@ app.get('/groups/:id', async (req, res) => {
 
 app.put("/group/:TGroupId", async (req, res) => {
   const TGroupId = req.params.TGroupId;
-  const { groupName, members = [], profilePic, deptHead = [], projectLead = [] } = req.body;
+  const { groupName, members, profilePic, deptHead, projectLead } = req.body;
+  
+  console.log("Request body:", req.body);  // Log the incoming data
 
   try {
-    // Find the existing Task Group by its ID
-    const existingTGroup = await TGroupSchema.findById(TGroupId);
+      const existingTGroup = await TGroupSchema.findById(TGroupId);
+      if (!existingTGroup) {
+          return res.status(404).json({ message: "Task Group not found" });
+      }
 
-    if (!existingTGroup) {
-      return res.status(404).json({ message: "Task Group not found" });
-    }
+      const updateList = (existingList, newList) => {
+          // Ensure each item in newList has the necessary fields
+          const validNewList = newList.filter(item => item && item.userId && item.name);
+          const newIds = new Set(validNewList.map(item => item.userId));
+          const filteredList = existingList.filter(item => item && !newIds.has(item.userId));
+          return filteredList.concat(validNewList);
+      };
 
-    // Ensure that existing group lists are arrays and remove null/undefined values
-    existingTGroup.deptHead = existingTGroup.deptHead || [];
-    existingTGroup.projectLead = existingTGroup.projectLead || [];
-    existingTGroup.members = existingTGroup.members || [];
+      const updatedDeptHeads = updateList(existingTGroup.deptHead, deptHead);
+      const updatedProjectLeads = updateList(existingTGroup.projectLead, projectLead);
+      const updatedMembers = updateList(existingTGroup.members, members);
 
-    console.log("deptHead:", deptHead); // Log the deptHead array
-    console.log("projectLead:", projectLead); // Log the projectLead array
+      const allUnique = Array.from(new Map(
+          [...updatedDeptHeads, ...updatedProjectLeads, ...updatedMembers].map(item => [item.userId, item])
+      ).values());
 
-    // Function to remove duplicates by _id and add new items
-    const updateList = (existingList, newList) => {
-      // Validate newList items and filter out null or undefined values
-      const validNewList = newList.filter(item => item && item._id);
-      // Create a Set of _id values from valid new items
-      const newIds = new Set(validNewList.map(item => item._id));
-      // Filter out existing items whose _id is not in the new set
-      const filteredList = existingList.filter(item => item && !newIds.has(item._id));
-      // Concatenate the filtered existing list with the valid new list
-      return filteredList.concat(validNewList);
-    };
+      const updatedTGroup = await TGroupSchema.findByIdAndUpdate(
+          TGroupId,
+          {
+              groupName,
+              members: allUnique.filter(member => members.some(mem => mem.userId === member.userId)),
+              profilePic,
+              projectLead: allUnique.filter(member => projectLead.some(lead => lead.userId === member.userId)),
+              deptHead: allUnique.filter(member => deptHead.some(head => head.userId === member.userId))
+          },
+          { new: true }
+      );
 
-
-    // Deduplicate and update lists for department heads, project leads, and members
-    const updatedDeptHeads = updateList(existingTGroup.deptHead, deptHead);
-    const updatedProjectLeads = updateList(existingTGroup.projectLead, projectLead);
-    const updatedMembers = updateList(existingTGroup.members, members);
-
-    // Combine all updated lists and ensure uniqueness based on _id
-    const allUnique = Array.from(new Map(
-      [...updatedDeptHeads, ...updatedProjectLeads, ...updatedMembers].map(item => [item._id, item])
-    ).values());
-
-    // Update the Task Group with the new data
-    const updatedTGroup = await TGroupSchema.findByIdAndUpdate(
-      TGroupId,
-      {
-        groupName,
-        members: allUnique.filter(member => members.some(mem => mem._id === member._id)),
-        profilePic,
-        projectLead: allUnique.filter(member => projectLead.some(lead => lead._id === member._id)),
-        deptHead: allUnique.filter(member => deptHead.some(head => head._id === member._id))
-      },
-      { new: true }
-    );
-
-    res.json(updatedTGroup);
+      res.json(updatedTGroup);
   } catch (error) {
-    console.error("Error updating Task Group:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+      console.error("Error updating Task Group:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+     }
 });
 
 app.put("/TGroup/:TGroupId", async (req, res) => {
@@ -290,11 +274,15 @@ app.get("/members/:TGroupId", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
 app.delete("/deletegroup/:TGroupId", async (req, res) => {
   const TGroupId = req.params.TGroupId;
 
+  console.log(`Received TGroupId: ${TGroupId}`); // Log received ID
+
   // Check if TGroupId is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(TGroupId)) {
+    console.log("Invalid Group ID"); // Log invalid ID
     return res.status(400).json({ message: "Invalid Group ID" });
   }
 
@@ -302,15 +290,18 @@ app.delete("/deletegroup/:TGroupId", async (req, res) => {
     const deletedTask = await TGroupSchema.findOneAndDelete({ _id: TGroupId });
 
     if (deletedTask) {
+      console.log("Task Group deleted successfully"); // Log success
       res.status(200).json({ message: "Task Group deleted successfully" });
     } else {
+      console.log("Task Group not found"); // Log not found
       res.status(404).json({ message: "Task Group not found" });
     }
   } catch (error) {
     console.error("Error deleting Task Group:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    res.status(500).json({ error: "Internal Server Error" });
+}
 });
+
 app.get("/tasksByGroup", async (req, res) => {
   try {
     // Aggregate tasks by group name
