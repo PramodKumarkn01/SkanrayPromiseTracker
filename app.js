@@ -23,9 +23,12 @@ app.use(express.json());
 //       credentials: true,
 //   })
 //   );
+
+
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true}))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api',UserR);
+
 app.use('/api',Signinroutes);
 app.use('/api',AddTask);
 app.use('/api',TaskGroup);
