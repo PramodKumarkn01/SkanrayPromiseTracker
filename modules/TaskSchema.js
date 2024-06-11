@@ -4,7 +4,11 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   owner: { id: String, name: String, profilePic: String },
   // taskGroup:{ id: String, name: String },
-  taskGroup: { type: String },
+  taskGroup: {
+    groupName: { type: String },
+    groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskGroup' }
+  },
+
   taskName: { type: String },
   description: { type: String },
   audioFile: { type: String },

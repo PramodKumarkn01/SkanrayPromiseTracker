@@ -36,6 +36,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       startDate,
       endDate,
       reminder,
+      status,
     } = req.body;
     // console.log("reqst body",req.body)
     // console.log("reqst pdf body",req.file)
@@ -48,7 +49,10 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
     // console.log('pdf',req.file)
     const newTask = new Task({
       owner,
-      taskGroup,
+      taskGroup: {
+        groupName: taskGroup.groupName,
+        groupId: taskGroup.groupId
+      },
       taskName,
       description,
       audioFile,
@@ -57,6 +61,7 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       startDate,
       endDate,
       reminder,
+      status: 'To do',
       createdAt: new Date(),
     });
 
@@ -110,7 +115,10 @@ app.post("/tasksadd", async (req, res) => {
     // Creating a new task object
     const newTask = new Task({
       owner: { id: ownerId, name: ownerName },
-      taskGroup,
+      taskGroup: {
+        groupName: taskGroup.groupName,
+        groupId: taskGroup.groupId
+      },
       taskName,
       description,
       audioFile,
@@ -154,9 +162,10 @@ app.post("/tasksadd", async (req, res) => {
     res.status(201).json({ newTask: savedTask });
   } catch (error) {
     console.error("Error creating task:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
+
 app.post("/notifications/reply", async (req, res) => {
   try {
     const { userId, taskId, status, comment,  startDate, endDate, action } = req.body;
@@ -175,13 +184,12 @@ app.post("/notifications/reply", async (req, res) => {
         break;
       case "Rejected":
         title = `${user.name} rejected the task`;
-
         break;
       case "Accepted & Modified":
         title = `${user.name} accepted and  modified the task`;
         break;
       default:
-        title = `${user.name} responded to the task`; 
+        title = `${user.name} responded to the task`;
     }
 
     const newNotification = new Notification({
@@ -306,9 +314,9 @@ app.put("/notifications/:taskid", async (req, res) => {
 app.put("/action/update/:userId", async (req, res) => {
   try {
     const { userId } = req.params; 
-    console.log('id', userId);
+    // console.log('id', userId);
     const updatedNotifications = await Notification.updateMany(
-      { userid: userId, action: true },
+      { userId: userId, action: true },
       { $set: { action: false } }
     );
     if (updatedNotifications.nModified === 0) {
