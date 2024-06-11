@@ -17,14 +17,6 @@ mongoose.connect('mongodb+srv://Promise:Promise@cluster0.iufeasi.mongodb.net/?re
 .then(()=> console.log("connected successfuly"))
 .catch(err=> console.error("field connection",err));
 app.use(express.json());
-// app.use(
-//     cors({
-//       origin: ["http://localhost:3000", "https://promise-tracker-orcin.vercel.app"],
-//       credentials: true,
-//   })
-//   );
-
-
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true}))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api',UserR);
