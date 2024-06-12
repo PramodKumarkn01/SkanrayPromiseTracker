@@ -338,7 +338,7 @@ app.get("/allassignuser", async (req, res) => {
       const userId = user._id;
 
       // Find all tasks where the specified user is assigned as a person
-      const tasksForUser = await Task.find({ "people._id": userId }).populate('taskGroup', 'taskGroup');
+      const tasksForUser = await Task.find({ "people.userId": userId }).populate('taskGroup', 'taskGroup');
 
       // Initialize arrays to store assigned task names and group data for the user
       let taskNames = [];
@@ -352,7 +352,7 @@ app.get("/allassignuser", async (req, res) => {
         taskNames.push(task.taskName);
 
         // Get the group name
-        const groupName = task.taskGroup;
+        const groupName = task.taskGroup.groupName;
 
         // Check if the group name already exists in groupData array
         const groupIndex = groupData.findIndex(group => group.name === groupName);
@@ -413,8 +413,8 @@ app.get("/allassignuser", async (req, res) => {
     res.json(userData);
   } catch (error) {
     console.error("Error fetching tasks assigned to the users:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 app.get("/allusertask", async (req, res) => {
   try {
