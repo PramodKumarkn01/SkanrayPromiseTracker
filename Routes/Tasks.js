@@ -74,7 +74,8 @@ app.put("/tasks/:taskId/status", async (req, res) => {
     const { taskId } = req.params;
     const { status } = req.body;
 
-    if (!["", "In Progress", "Completed", "Cancelled"].includes(status)) {
+    // Add "Archive" to the list of valid statuses, and keep the empty string as a valid status
+    if (!["", "In Progress", "Completed", "Cancelled", "Archive"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
@@ -91,8 +92,8 @@ app.put("/tasks/:taskId/status", async (req, res) => {
     res.json(updatedTask);
   } catch (error) {
     console.error("Error updating task status:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
+    res.status(500).json({ message: "Internal Server Error" });
+ }
 });
 
 app.put("/tasks/:taskId", async (req, res) => {
@@ -329,6 +330,32 @@ app.get("/comments/:taskId", async (req, res) => {
     console.error('Error fetching comments:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
+});
+app.put("/archiveOldTasks", async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const tasks = await Task.find();
+    const updatedTasks = [];
+
+    for (const task of tasks) {
+      if (task.endDate) {
+        const endDate = new Date(task.endDate);
+        const diffTime = Math.abs(currentDate - endDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 30 && task.status !== "Archive") {
+          task.status = "Archive";
+          await task.save();
+          updatedTasks.push(task);
+        }
+      }
+    }
+
+    res.json({ message: "Old tasks archived successfully", updatedTasks });
+  } catch (error) {
+    console.error("Error archiving old tasks:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 module.exports = app;
