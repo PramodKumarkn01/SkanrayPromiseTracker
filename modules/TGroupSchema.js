@@ -10,6 +10,13 @@ const taskGroupSchema = new mongoose.Schema({
   projectLead:[{ userId: String, name: String }],
   members:[{ userId: String, name: String }],
   profilePic:{type:String},
+  pinnedBy: [{
+    _id: false, // Disable _id creation for subdocuments
+    userId: {
+      type: String,
+    }
+
+  }],
  
   createdAt: Date,
 });

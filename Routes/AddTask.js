@@ -45,14 +45,12 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
     const ownerName = owner.name;
     const ownerprofilePic = owner.profilePic;
     const pdfFile = req.file ? req.file.path : null;
+    // console.log('taskgroup',taskGroup)
 
     // console.log('pdf',req.file)
     const newTask = new Task({
       owner,
-      taskGroup: {
-        groupName: taskGroup.groupName,
-        groupId: taskGroup.groupId
-      },
+      taskGroup,
       taskName,
       description,
       audioFile,
