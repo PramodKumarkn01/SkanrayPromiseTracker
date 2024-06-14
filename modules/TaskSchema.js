@@ -6,9 +6,8 @@ const taskSchema = new mongoose.Schema({
   // taskGroup:{ id: String, name: String },
   taskGroup: {
     groupName: { type: String },
-    groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskGroup' }
+    groupId: { type: String }
   },
-
   taskName: { type: String },
   description: { type: String },
   audioFile: { type: String },
@@ -24,10 +23,13 @@ const taskSchema = new mongoose.Schema({
     text: { type: String, },
     date: { type: String, }
   },
+  pow: {
+    text: { type: String },
+    file: { type: String } 
+  },
+
   createdAt: { type: Date }
 });
-
 const Task = mongoose.model('Task', taskSchema);
-
 module.exports = Task;
 

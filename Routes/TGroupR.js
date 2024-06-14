@@ -317,7 +317,6 @@ app.get("/tasksByGroup", async (req, res) => {
       }
     ]);
 
-
     res.json(tasksByGroup);
   } catch (error) {
     console.error("Error fetching tasks by group:", error);
@@ -506,4 +505,53 @@ app.delete("/delete/:TGroupId", LevelsRoutes, async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+app.post("/pin/:groupId", async (req, res) => {
+  const { userId } = req.body; // Get userId from request body
+  try {
+    const group = await TGroupSchema.findById(req.params.groupId);
+    if (!group) {
+      return res.status(404).send({ message: "Group not found." });
+    }
+
+    // Check if userId already exists in pinnedBy array
+    const isUserPinned = group.pinnedBy.some(user => user.userId === userId);
+    if (isUserPinned) {
+      return res.status(400).send({ message: "User already pinned to this group." });
+    }
+
+    // If user is not already pinned, add to pinnedBy array
+    group.pinnedBy.push({ userId });
+    await group.save();
+
+    res.status(200).send({ message: "Group pinned successfully.", group });
+  } catch (error) {
+    console.error("Error pinning group:", error); // Log the error for debugging purposes
+    res.status(500).send({ message: "Error pinning group.", error }); // Send the error response with details
+  }
+});
+
+
+app.post("/unpin/:groupId/:userId", async (req, res) => {
+  const { groupId, userId } = req.params; // Get groupId and userId from params
+  try {
+    const group = await TGroupSchema.findById(groupId);
+    if (!group) {
+      return res.status(404).send({ message: "Group not found." });
+    }
+
+    const userIndex = group.pinnedBy.findIndex(user => user.userId === userId);
+    if (userIndex === -1) {
+      return res.status(404).send({ message: "User not found in pinned list." });
+    }
+
+    // Remove user from pinnedBy array
+    group.pinnedBy.splice(userIndex, 1);
+    await group.save();
+
+    res.status(200).send({ message: "Group unpinned successfully.", group });
+  } catch (error) {
+    res.status(500).send({ message: "Error unpinning group.", error });
+  }
+});
+
 module.exports = app;

@@ -358,4 +358,43 @@ app.put("/archiveOldTasks", async (req, res) => {
   }
 });
 
+app.put("/tasks/:taskId/complete", async (req, res) => {
+  try {
+      const { taskId } = req.params;
+      const { text, file } = req.body; // Extract text and file (base64 encoded) from request body
+
+      // Check if text is provided (it's required)
+      if (!text) {
+          return res.status(400).json({ message: "Text for proof of work is required" });
+      }
+
+      // Create the pow object with provided text and/or file
+      let pow = { text };
+      if (file) {
+          pow.file = file; // Assuming file is already base64 encoded as a string
+      }
+
+      // Update the task document
+      const updatedTask = await Task.findByIdAndUpdate(
+          taskId,
+          {
+              $set: {
+                  status: "Completed",
+                  pow: pow
+              }
+          },
+          { new: true }
+      );
+
+      if (!updatedTask) {
+          return res.status(404).json({ message: "Task not found" });
+      }
+
+      res.json(updatedTask);
+  } catch (error) {
+      console.error("Error updating task status to Completed:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 module.exports = app;
