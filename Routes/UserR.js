@@ -150,6 +150,8 @@ Router.get("/registeredNames", async (req, res) => {
       name: item.name,
       email: item.email,
       active: item.active,
+      userRole: item.userRole,
+      profilePic: item.profilePic,
     }));
 
     res.json(userNamesEmail);

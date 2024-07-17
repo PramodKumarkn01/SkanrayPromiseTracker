@@ -38,16 +38,15 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       reminder,
       status,
     } = req.body;
-    // console.log("reqst body",req.body)
-    // console.log("reqst pdf body",req.file)
-    // console.log(req.body,"data")
     const ownerId = owner.id;
     const ownerName = owner.name;
     const ownerprofilePic = owner.profilePic;
     const pdfFile = req.file ? req.file.path : null;
+    // const pdfFile = req.files.pdfFile ? req.files.pdfFile[0].path : null;
+    // const audioFile = req.files.audioFile ? req.files.audioFile[0].path : null;
+
     // console.log('taskgroup',taskGroup)
 
-    // console.log('pdf',req.file)
     const newTask = new Task({
       owner,
       taskGroup,
@@ -161,7 +160,7 @@ app.post("/tasksadd", async (req, res) => {
   } catch (error) {
     console.error("Error creating task:", error);
     res.status(500).json({ error: "Internal Server Error" });
-  }
+}
 });
 
 app.post("/notifications/reply", async (req, res) => {
@@ -282,7 +281,7 @@ app.put("/tasks/update/:taskId", async (req, res) => {
 
 app.put("/notifications/:taskid", async (req, res) => {
   const { id } = req.params; 
-  const { title, description, status, owner, taskId } = req.body; 
+  const { title, description, status, owner, taskId } = req.body;
   try {
     const notification = await Notification.findByIdAndUpdate(
       id,
@@ -311,7 +310,7 @@ app.put("/notifications/:taskid", async (req, res) => {
 
 app.put("/action/update/:userId", async (req, res) => {
   try {
-    const { userId } = req.params; 
+    const { userId } = req.params;
     // console.log('id', userId);
     const updatedNotifications = await Notification.updateMany(
       { userId: userId, action: true },
