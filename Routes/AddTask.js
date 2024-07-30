@@ -8,6 +8,7 @@ const { Expo } = require("expo-server-sdk");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const mongoose = require('mongoose');
 
 const expo = new Expo();
 app.use(cors());
@@ -37,6 +38,8 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       endDate,
       reminder,
       status,
+      remark,
+      pow,
     } = req.body;
     const ownerId = owner.id;
     const ownerName = owner.name;
@@ -59,6 +62,8 @@ app.post("/tasks", upload.single("pdfFile"), async (req, res) => {
       endDate,
       reminder,
       status: 'To do',
+      remark: remark || { text: '', date: '' },
+      pow: pow || { text: '', file: '' },
       createdAt: new Date(),
     });
 
@@ -364,6 +369,32 @@ app.put('/updatetasks/:id', async (req, res) => {
     res.status(400).send('Error updating task: ' + error.message);
   }
 });
+
+app.patch('/resons/:id', async (req, res) => {
+  let taskId = req.params.id;
+  
+  // Trim any extra whitespace or newline characters
+  taskId = taskId.trim();
+  
+  const updates = req.body; // This should include remark and pow
+
+  try {
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).send('Invalid Task ID');
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(taskId, updates, { new: true, runValidators: true });
+    if (!updatedTask) {
+      return res.status(404).send('Task not found');
+    }
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error('Error updating task:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 
 module.exports = app;

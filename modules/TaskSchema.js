@@ -25,11 +25,16 @@ const taskSchema = new mongoose.Schema({
   },
   pow: {
     text: { type: String },
-    file: { type: String } 
+    file: {
+      fileCopyUri: String,
+      size: Number,
+      name: String,
+      type: String,
+      uri: String,
+    }
   },
 
   createdAt: { type: Date }
 });
 const Task = mongoose.model('Task', taskSchema);
 module.exports = Task;
-

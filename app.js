@@ -1,3 +1,6 @@
+
+const dotenv = require('dotenv')
+dotenv.config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -27,6 +30,10 @@ app.use('/api',TaskGroup);
 app.use('/api',TGroupR);
 app.use('/api',ForgetPassword);
 app.use('/api',ResetPassword);
+app.use('/',(req,res )=>{
+    res.send('hello')
+});
+
 
 app.listen(PORT,()=>{
     console.log(`server is runinng on http://localhost:${PORT}`)

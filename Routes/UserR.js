@@ -8,9 +8,11 @@ const Router = express.Router();
 const bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
+const app = require("./AddTask");
+const upload = require("../S3 services/s3");
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+// const upload = multer({ storage: storage });
 
 Router.post("/registration", async (req, res) => {
   const { name, mobilenumber, email, password, userRole,active } = req.body;
@@ -226,6 +228,28 @@ Router.patch('/:userId/activate', async (req, res) => {
     console.error('Error activating user:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
+});
+
+Router.post('/upload-voice', upload.single('voice'), async (req, res) => {
+  try {
+    const voiceUrl = req.file.location;
+    console.log(req.file)
+    console.log('voice url ', voiceUrl)
+    res.json({ result: voiceUrl, message: "Voice file uploaded successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+}
+});
+
+Router.post('/upload-pdf', upload.single('pdf'), async (req, res) => {
+  try {
+    const pdfUrl = req.file.location;
+    console.log(req.file)
+    console.log('pdf url ', pdfUrl)
+    res.json({ result: pdfUrl, message: "pdf file uploaded successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+}
 });
 
 module.exports = Router;
