@@ -11,8 +11,8 @@ const fs = require("fs");
 const app = require("./AddTask");
 const upload = require("../S3 services/s3");
 
-const storage = multer.memoryStorage();
-// const upload = multer({ storage: storage });
+const storage = multer.memoryStorage(); // Store the file as a Buffer in memory
+const upload = multer({ storage: storage });
 
 Router.post("/registration", async (req, res) => {
   const { name, mobilenumber, email, password, userRole,active } = req.body;
@@ -250,6 +250,35 @@ Router.post('/upload-pdf', upload.single('pdf'), async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
 }
+});
+
+Router.patch('/:userId/deactivate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('id',userId)
+    const user = await UserSchema.findByIdAndUpdate(userId, { active: false }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User deactivated successfully', user });
+  } catch (error) {
+    console.error('Error deactivating user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+Router.patch('/:userId/activate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await UserSchema.findByIdAndUpdate(userId, { active: true }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User activated successfully', user });
+  } catch (error) {
+    console.error('Error activating user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 module.exports = Router;
