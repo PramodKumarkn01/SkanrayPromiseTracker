@@ -12,7 +12,7 @@ const app = require("./AddTask");
 const upload = require("../S3 services/s3");
 
 const storage = multer.memoryStorage(); // Store the file as a Buffer in memory
-const upload = multer({ storage: storage });
+// const upload = multer({ storage: storage });
 
 Router.post("/registration", async (req, res) => {
   const { name, mobilenumber, email, password, userRole,active } = req.body;
